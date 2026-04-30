@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אספ'ה - נוכחות בקלות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .progress-pipe { height: 30px; border-radius: 15px; background: #e2e8f0; position: relative; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #48bb78, #38a169); transition: width 0.5s ease; }
+        .marker { position: absolute; top: 0; bottom: 0; width: 3px; background: #f56565; z-index: 10; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        .neon-glow { box-shadow: 0 0 15px rgba(72, 187, 120, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen pb-20">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 shadow-lg rounded-b-3xl">
+        <h1 class="text-2xl font-bold">היי מתן 👋</h1>
+        <p class="opacity-90" id="currentMonthText">מעקב שעות לחודש אפריל</p>
+    </header>
+
+    <main class="p-4 space-y-6">
+        
+        <!-- Dashboard Card -->
+        <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <span class="text-sm text-slate-500 block">נותרו עוד</span>
+                    <span class="text-3xl font-black text-blue-600" id="hoursRemainingDisplay">0</span>
+                    <span class="text-lg text-blue-400">שעות</span>
+                </div>
+                <div class="text-left">
+                    <span class="text-sm text-slate-500 block text-right">יעד חודשי</span>
+                    <span class="font-bold text-slate-700" id="targetDisplay">53.5</span>
+                </div>
+            </div>
+
+            <!-- Progress Pipe -->
+            <div class="progress-pipe shadow-inner mb-2">
+                <div id="marker" class="marker" style="right: 50%;"></div>
+                <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-400 font-medium">
+                <span>0%</span>
+                <span>היום (קצב מומלץ)</span>
+                <span>100%</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="toggleCheckIn()" id="checkBtn" class="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 active:scale-95 transition-all">
+                <div id="checkIcon" class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2 text-2xl">📍</div>
+                <span id="checkText" class="font-bold text-slate-700">כניסה</span>
+            </button>
+            <button onclick="addManualHours()" class="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border-2 border-green-100 active:scale-95 transition-all">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-2 text-2xl">➕</div>
+                <span class="font-bold text-slate-700">הוספת שעות</span>
+            </button>
+        </div>
+
+        <!-- Prediction Box -->
+        <div id="predictionBox" class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
+            טוען נתונים...
+        </div>
+
+        <!-- Quick Settings -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">⚙️ הגדרות מהירות</h3>
+            <div class="space-y-3">
+                <button onclick="addHoliday()" class="w-full text-right p-2 text-sm bg-orange-50 text-orange-700 rounded-lg border border-orange-100">🏖️ יום חג/חופשה כפויה (מוריד 5.5 ש' מהיעד)</button>
+                <button onclick="resetData()" class="w-full text-right p-2 text-sm bg-red-50 text-red-600 rounded-lg border border-red-100">⚠️ איפוס נתוני חודש</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // State Management
+        let data = JSON.parse(localStorage.getItem('work_tracker_data')) || {
+            actualHours: 0,
+            targetHours: 53.5,
+            isCheckedIn: false,
+            checkInTime: null,
+            logs: []
+        };
+
+        function saveData() {
+            localStorage.setItem('work_tracker_data', JSON.stringify(data));
+            updateUI();
+        }
+
+        function updateUI() {
+            const progress = (data.actualHours / data.targetHours) * 100;
+            document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
+            document.getElementById('hoursRemainingDisplay').innerText = Math.max(data.targetHours - data.actualHours, 0).toFixed(1);
+            document.getElementById('targetDisplay').innerText = data.targetHours.toFixed(1);
+            
+            // Check-in status
+            if (data.isCheckedIn) {
+                document.getElementById('checkText').innerText = "יציאה";
+                document.getElementById('checkIcon').innerText = "🛑";
+                document.getElementById('checkBtn').classList.add('border-red-200', 'bg-red-50');
+            } else {
+                document.getElementById('checkText').innerText = "כניסה";
+                document.getElementById('checkIcon').innerText = "📍";
+                document.getElementById('checkBtn').classList.remove('border-red-200', 'bg-red-50');
+            }
+
+            // Marker Calculation (Linear Pace)
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const currentDay = now.getDate();
+            const monthProgress = (currentDay / daysInMonth) * 100;
+            document.getElementById('marker').style.right = (100 - monthProgress) + '%';
+
+            // Prediction Logic
+            const remainingHours = data.targetHours - data.actualHours;
+            const remainingWorkDays = calculateRemainingWorkDays(); // Default Sundays and Wednesdays
+            const perDay = remainingWorkDays > 0 ? (remainingHours / remainingWorkDays).toFixed(1) : 0;
+            
+            document.getElementById('predictionBox').innerText = `נותרו עוד כ-${remainingWorkDays} ימי עבודה (א' ו-ד') החודש. כדי לעמוד ביעד, עליך לעבוד בממוצע ${perDay} שעות בכל אחד מהם.`;
+        }
+
+        function toggleCheckIn() {
+            const now = new Date();
+            if (!data.isCheckedIn) {
+                data.isCheckedIn = true;
+                data.checkInTime = now.getTime();
+            } else {
+                const diffMs = now.getTime() - data.checkInTime;
+                const diffHrs = diffMs / (1000 * 60 * 60);
+                data.actualHours += diffHrs;
+                data.isCheckedIn = false;
+                data.checkInTime = null;
+                alert(`נרשמו ${diffHrs.toFixed(2)} שעות עבודה.`);
+            }
+            saveData();
+        }
+
+        function addManualHours() {
+            const hours = prompt("כמה שעות להוסיף?");
+            if (hours && !isNaN(hours)) {
+                data.actualHours += parseFloat(hours);
+                saveData();
+            }
+        }
+
+        function addHoliday() {
+            data.targetHours -= 5.5; // Average day shift
+            saveData();
+            alert("היעד החודשי עודכן.");
+        }
+
+        function calculateRemainingWorkDays() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            let count = 0;
+            for (let i = now.getDate() + 1; i <= lastDay; i++) {
+                const day = new Date(year, month, i).getDay();
+                if (day === 0 || day === 3) count++; // 0 = Sunday, 3 = Wednesday
+            }
+            return count || 1; // Avoid division by zero
+        }
+
+        function resetData() {
+            if (confirm("בטוח שברצונך לאפס את כל הנתונים החודשיים?")) {
+                data = { actualHours: 0, targetHours: 53.5, isCheckedIn: false, checkInTime: null, logs: [] };
+                saveData();
+            }
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
