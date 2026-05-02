@@ -12,12 +12,12 @@
         .progress-planned { height: 100%; background: var(--warning); transition: width 0.5s ease; position: absolute; z-index: 4; opacity: 0.6; }
         .marker { position: absolute; top: 0; bottom: 0; width: 3px; background: #ef4444; z-index: 10; }
         .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; border-radius: 12px; border: 1px solid #f1f5f9; background: white; transition: transform 0.1s; }
-        .calendar-day:active { transform: scale(0.9); }
         .tab-active { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--primary); }
     </style>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen pb-24 text-slate-900 transition-colors duration-500">
 
+    <!-- Header -->
     <header class="bg-indigo-700 text-white p-6 shadow-2xl rounded-b-[3rem] sticky top-0 z-40">
         <div class="flex justify-between items-center max-w-md mx-auto">
             <h1 class="text-2xl font-black tracking-tighter">קודי ⌨️ <span class="text-xs font-normal opacity-70">v2.4</span></h1>
@@ -29,40 +29,46 @@
         </div>
     </header>
 
+    <!-- Tabs -->
     <nav class="flex p-1.5 bg-slate-200/60 backdrop-blur-md mx-6 -mt-4 rounded-2xl gap-1 shadow-sm relative z-50 max-w-md mx-auto">
         <button onclick="switchTab('dash')" id="tabDash" class="flex-1 py-2 font-bold rounded-xl tab-active transition-all">מצב נוכחי</button>
         <button onclick="switchTab('cal')" id="tabCal" class="flex-1 py-2 font-bold rounded-xl text-slate-500 transition-all">לוח שנה</button>
     </nav>
 
+    <!-- Dashboard View -->
     <main id="viewDash" class="p-6 space-y-6 max-w-md mx-auto">
-        <!-- Main Stats Card -->
+        
+        <!-- כרטיס סטטיסטיקה ראשי -->
         <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-indigo-50 relative overflow-hidden">
             <div class="flex justify-between items-start relative z-10">
                 <div>
                     <span class="text-[11px] text-slate-400 font-bold uppercase">יתרה לביצוע</span>
                     <div class="text-5xl font-black text-indigo-600 tracking-tight" id="hoursRemaining">00:00</div>
                 </div>
+                
                 <div class="text-left space-y-2">
+                    <!-- יעד בסיס -->
                     <div class="bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                        <span class="text-[9px] text-slate-400 block font-bold">יעד בסיס</span>
+                        <span class="text-[9px] text-slate-400 block font-bold italic">יעד בסיס</span>
                         <div class="flex items-center gap-1 text-sm font-black">
                             <input type="number" id="targetH" onchange="saveTarget()" class="w-8 bg-transparent text-center outline-none">
                             <span>:</span>
                             <input type="number" id="targetM" onchange="saveTarget()" class="w-8 bg-transparent text-center outline-none">
                         </div>
                     </div>
-                    <!-- Bonus Input -->
-                    <div class="bg-emerald-50 p-2 rounded-2xl border border-emerald-100">
-                        <span class="text-[9px] text-emerald-600 block font-bold">בונוס מנהלת</span>
+                    
+                    <!-- שדה בונוס (הפיצ'ר החדש!) -->
+                    <div class="bg-emerald-50 p-2 rounded-2xl border border-emerald-200 ring-2 ring-emerald-100">
+                        <span class="text-[9px] text-emerald-600 block font-bold">+ בונוס שעות</span>
                         <div class="flex items-center gap-1 text-sm font-black text-emerald-700">
-                            <span>+</span>
-                            <input type="number" id="bonusH" placeholder="0" onchange="saveTarget()" class="w-8 bg-transparent text-center outline-none">
-                            <span>:00</span>
+                            <input type="number" id="bonusH" placeholder="0" onchange="saveTarget()" class="w-12 bg-transparent text-center outline-none border-b border-emerald-200 focus:border-emerald-500">
+                            <span>ש'</span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- המד הויזואלי -->
             <div class="mt-6">
                 <div class="progress-pipe shadow-inner">
                     <div id="marker" class="marker shadow-lg"></div>
@@ -70,14 +76,13 @@
                     <div id="plannedFill" class="progress-planned"></div>
                 </div>
                 <div class="flex justify-between mt-2 text-[10px] font-bold">
-                    <span class="text-emerald-500">בוצע</span>
-                    <span class="text-yellow-500">תכנון</span>
-                    <span id="targetLabel" class="text-indigo-400"></span>
+                    <span class="text-emerald-500" id="doneLabel">בוצע: 0:00</span>
+                    <span id="targetLabel" class="text-indigo-400 font-black">יעד כולל: 42:15</span>
                 </div>
             </div>
         </div>
 
-        <!-- Controls -->
+        <!-- כפתורי פעולה -->
         <div class="grid grid-cols-2 gap-4">
             <button onclick="toggleCheckIn()" id="checkBtn" class="bg-white p-5 rounded-[2rem] shadow-md border border-indigo-100 flex flex-col items-center transition-all active:scale-95">
                 <span id="checkIcon" class="text-3xl mb-2">📍</span>
@@ -89,67 +94,73 @@
             </button>
         </div>
 
-        <div id="predictionBox" class="bg-white p-4 rounded-3xl border-r-4 border-r-indigo-500 shadow-sm text-xs leading-relaxed italic"></div>
+        <!-- תיבת חיזוי -->
+        <div id="predictionBox" class="bg-indigo-50 p-4 rounded-3xl border-r-4 border-r-indigo-500 shadow-sm text-xs leading-relaxed italic text-indigo-900"></div>
 
+        <!-- רשימת דיווחים -->
         <div class="space-y-3">
-            <h3 class="font-black text-slate-400 text-[10px] uppercase tracking-widest px-2">יומן פעילות</h3>
+            <h3 class="font-black text-slate-400 text-[10px] uppercase tracking-widest px-2">יומן פעילות לחודש זה</h3>
             <div id="logList" class="space-y-2"></div>
         </div>
     </main>
 
-    <!-- Modal -->
+    <!-- Modal דיווח -->
     <div id="manualModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end justify-center">
         <div class="bg-white w-full max-w-md rounded-t-[3rem] p-8 shadow-2xl transition-all">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
             <h2 class="text-xl font-bold mb-6 text-center italic">מה הלו"ז, מתן?</h2>
             <div class="space-y-4">
-                <input type="date" id="entryDate" class="w-full bg-slate-100 rounded-2xl p-4 font-bold text-center">
-                <select id="entryType" class="w-full bg-slate-100 rounded-2xl p-4 font-bold text-center appearance-none">
+                <input type="date" id="entryDate" class="w-full bg-slate-100 rounded-2xl p-4 font-bold text-center border-none outline-none focus:ring-2 focus:ring-indigo-500">
+                <select id="entryType" class="w-full bg-slate-100 rounded-2xl p-4 font-bold text-center appearance-none border-none outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="עבודה">🏢 עבודה במחלקה</option>
                     <option value="הדרכה">📚 הדרכה / ישיבה</option>
                     <option value="חופשה/חג">🏖️ חופשה / מחלה</option>
                 </select>
                 <div class="flex items-center gap-4">
-                    <input type="number" id="entryH" placeholder="שעות" class="flex-1 bg-slate-100 rounded-2xl p-4 text-center font-bold">
+                    <input type="number" id="entryH" placeholder="שעות" class="flex-1 bg-slate-100 rounded-2xl p-4 text-center font-bold outline-none focus:ring-2 focus:ring-indigo-500">
                     <span class="font-black text-2xl">:</span>
-                    <input type="number" id="entryM" placeholder="דקות" class="flex-1 bg-slate-100 rounded-2xl p-4 text-center font-bold">
+                    <input type="number" id="entryM" placeholder="דקות" class="flex-1 bg-slate-100 rounded-2xl p-4 text-center font-bold outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <label class="flex items-center justify-center gap-3 p-4 bg-yellow-50 rounded-2xl cursor-pointer border border-yellow-100">
-                    <input type="checkbox" id="isPlanned" class="w-6 h-6 rounded-lg text-indigo-600">
-                    <span class="text-sm font-bold text-yellow-800">זהו אירוע מתוכנן (טרם קרה)</span>
+                    <input type="checkbox" id="isPlanned" class="w-6 h-6 rounded-lg text-indigo-600 border-none outline-none">
+                    <span class="text-sm font-bold text-yellow-800">זהו אירוע מתוכנן (עתידי)</span>
                 </label>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="closeManualModal()" class="flex-1 py-4 font-bold text-slate-400">סגור</button>
-                    <button onclick="saveManualEntry()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200">שמור</button>
+                    <button onclick="closeManualModal()" class="flex-1 py-4 font-bold text-slate-400">ביטול</button>
+                    <button onclick="saveManualEntry()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg">שמור דיווח</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Calendar View Placeholder -->
+    <!-- לוח שנה -->
     <main id="viewCal" class="hidden p-6 max-w-md mx-auto">
-        <div class="bg-white p-4 rounded-[2.5rem] shadow-xl">
-            <div id="calendarHeaderGrid" class="grid grid-cols-7 mb-2">
-                 <!-- א-ש יתמלא ב-JS -->
-            </div>
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl">
+            <div id="calendarHeaderGrid" class="grid grid-cols-7 mb-4"></div>
             <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
         </div>
     </main>
 
     <script>
         let currentViewDate = new Date();
+        // שינוי שם ה-DB ל-2.4 כדי למנוע התנגשויות
         let db = JSON.parse(localStorage.getItem('matan_v2.4')) || { months: {}, checkIn: null };
 
         function getMonthKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}`; }
+        
         function getCurrentMonthData() {
             const key = getMonthKey(currentViewDate);
-            if (!db.months[key]) db.months[key] = { logs: [], targetMins: 2535, bonusMins: 0 };
+            if (!db.months[key]) {
+                db.months[key] = { logs: [], targetMins: 2535, bonusMins: 0 };
+            }
             return db.months[key];
         }
 
         function toHHMM(mins) {
             const abs = Math.abs(mins);
-            return `${mins < 0 ? '-' : ''}${Math.floor(abs/60)}:${String(Math.round(abs%60)).padStart(2,'0')}`;
+            const h = Math.floor(abs / 60);
+            const m = Math.round(abs % 60);
+            return `${mins < 0 ? '-' : ''}${h}:${String(m).padStart(2, '0')}`;
         }
 
         function renderAll() {
@@ -157,98 +168,157 @@
             const now = new Date();
             const isCurrentMonth = getMonthKey(now) === getMonthKey(currentViewDate);
             
-            document.getElementById('monthDisplay').innerText = `${currentViewDate.getMonth()+1} / ${currentViewDate.getFullYear()}`;
+            // עדכון שדות הקלט
+            document.getElementById('monthDisplay').innerText = `${currentViewDate.getMonth() + 1} / ${currentViewDate.getFullYear()}`;
             document.getElementById('targetH').value = Math.floor(data.targetMins / 60);
             document.getElementById('targetM').value = data.targetMins % 60;
             document.getElementById('bonusH').value = Math.floor((data.bonusMins || 0) / 60);
 
-            const done = data.logs.filter(l => l.type !== 'חופשה/חג' && !l.planned).reduce((s,l)=>s+l.mins, 0);
-            const planned = data.logs.filter(l => l.type !== 'חופשה/חג' && l.planned).reduce((s,l)=>s+l.mins, 0);
-            const holiday = data.logs.filter(l => l.type === 'חופשה/חג').reduce((s,l)=>s+l.mins, 0);
+            // לוגיקת חישוב שעות
+            const done = data.logs.filter(l => l.type !== 'חופשה/חג' && !l.planned).reduce((s, l) => s + l.mins, 0);
+            const planned = data.logs.filter(l => l.type !== 'חופשה/חג' && l.planned).reduce((s, l) => s + l.mins, 0);
+            const holidayMins = data.logs.filter(l => l.type === 'חופשה/חג').reduce((s, l) => s + l.mins, 0);
             
-            const totalTarget = (data.targetMins || 2535) + (data.bonusMins || 0) - holiday;
+            // היעד החדש: בסיס + בונוס - חופשות
+            const totalTarget = (data.targetMins) + (data.bonusMins || 0) - holidayMins;
             const remaining = totalTarget - done;
 
+            // עדכון UI
             document.getElementById('hoursRemaining').innerText = toHHMM(remaining);
-            document.getElementById('targetLabel').innerText = `יעד סופי: ${toHHMM(totalTarget)}`;
-            document.getElementById('progressFill').style.width = `${Math.min((done/totalTarget)*100, 100)}%`;
-            document.getElementById('plannedFill').style.width = `${Math.min(((done+planned)/totalTarget)*100, 100)}%`;
+            document.getElementById('doneLabel').innerText = `בוצע: ${toHHMM(done)}`;
+            document.getElementById('targetLabel').innerText = `יעד כולל: ${toHHMM(totalTarget)}`;
+            
+            // עדכון המד
+            const donePercent = Math.min((done / totalTarget) * 100, 100);
+            const plannedPercent = Math.min(((done + planned) / totalTarget) * 100, 100);
+            document.getElementById('progressFill').style.width = `${donePercent}%`;
+            document.getElementById('plannedFill').style.width = `${plannedPercent}%`;
 
+            // סמן היום (אדום)
             const marker = document.getElementById('marker');
             if (isCurrentMonth) {
-                const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-                marker.style.right = `${100 - (now.getDate()/daysInMonth*100)}%`;
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                marker.style.right = `${100 - (now.getDate() / daysInMonth * 100)}%`;
                 marker.style.display = 'block';
             } else { marker.style.display = 'none'; }
 
             renderLogList(data.logs);
-            if(isCurrentMonth) calculatePrediction(remaining, planned);
+            if (isCurrentMonth) calculatePrediction(remaining, planned);
             localStorage.setItem('matan_v2.4', JSON.stringify(db));
         }
 
         function calculatePrediction(rem, plan) {
             const now = new Date();
-            let count = 0;
-            for(let d=now.getDate()+1; d<=new Date(now.getFullYear(), now.getMonth()+1,0).getDate(); d++) {
-                const day = new Date(now.getFullYear(), now.getMonth(), d).getDay();
-                if(day===0 || day===3) count++;
+            let workDaysLeft = 0;
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            
+            for (let d = now.getDate() + 1; d <= lastDay; d++) {
+                const dayOfWeek = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 3) workDaysLeft++; // ימי ראשון ורביעי
             }
-            const avg = count > 0 ? (rem - plan) / count : 0;
-            document.getElementById('predictionBox').innerHTML = count > 0 ? 
-                `נשארו לך <b>${count}</b> ימי עבודה קבועים. כדי לעמוד ביעד (כולל הבונוס), עליך לתקתק <b>${toHHMM(avg)}</b> בכל יום.` : 
-                `סוף החודש הגיע! מקווה שהגעת ליעד.`;
+            
+            const neededPerDay = workDaysLeft > 0 ? (rem - plan) / workDaysLeft : 0;
+            
+            if (workDaysLeft > 0) {
+                document.getElementById('predictionBox').innerHTML = `נשארו <b>${workDaysLeft}</b> ימי עבודה (ראשון/רביעי). עליך לבצע <b>${toHHMM(neededPerDay)}</b> בכל אחד מהם כדי לעמוד ביעד המעודכן.`;
+            } else {
+                document.getElementById('predictionBox').innerText = "סוף החודש! מקווה שסיימת את כל המשימות.";
+            }
+        }
+
+        // --- שאר הפונקציות לניהול הממשק ---
+        
+        function saveTarget() {
+            const data = getCurrentMonthData();
+            data.targetMins = (parseInt(document.getElementById('targetH').value) || 0) * 60 + (parseInt(document.getElementById('targetM').value) || 0);
+            data.bonusMins = (parseInt(document.getElementById('bonusH').value) || 0) * 60;
+            renderAll();
         }
 
         function renderLogList(logs) {
             const list = document.getElementById('logList');
-            list.innerHTML = logs.length === 0 ? '<div class="text-center py-10 opacity-30">אין עדיין פעילות לחודש זה</div>' : '';
+            list.innerHTML = logs.length === 0 ? '<div class="text-center py-10 opacity-30 text-xs font-bold">אין דיווחים לחודש זה</div>' : '';
             [...logs].reverse().forEach((log, idx) => {
                 const div = document.createElement('div');
-                div.className = `flex justify-between items-center p-4 bg-white rounded-[1.5rem] shadow-sm border border-slate-50 transition-all ${log.planned ? 'bg-yellow-50/50 border-yellow-100' : ''}`;
-                div.innerHTML = `<div><div class="font-bold text-sm">${log.type} ${log.planned ? '(מתוכנן)' : ''}</div>
+                div.className = `flex justify-between items-center p-4 bg-white rounded-2xl shadow-sm border border-slate-100 ${log.planned ? 'bg-yellow-50/30' : ''}`;
+                div.innerHTML = `<div><div class="font-bold text-sm text-slate-700">${log.type} ${log.planned ? '⏳' : '✅'}</div>
                                  <div class="text-[10px] text-slate-400 font-bold">${log.date.split('-').reverse().join('/')} • ${toHHMM(log.mins)}</div></div>
-                                 <button onclick="deleteLog(${logs.length-1-idx})" class="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-red-400 transition-colors">✕</button>`;
+                                 <button onclick="deleteLog(${logs.length-1-idx})" class="text-slate-300 hover:text-red-400">✕</button>`;
                 list.appendChild(div);
             });
+        }
+
+        function switchTab(t) {
+            document.getElementById('viewDash').classList.toggle('hidden', t !== 'dash');
+            document.getElementById('viewCal').classList.toggle('hidden', t !== 'cal');
+            document.getElementById('tabDash').classList.toggle('tab-active', t !== 'dash');
+            document.getElementById('tabCal').classList.toggle('tab-active', t !== 'cal');
+            if (t === 'cal') renderCalendar();
         }
 
         function renderCalendar() {
             const header = document.getElementById('calendarHeaderGrid');
             header.innerHTML = ['א','ב','ג','ד','ה','ו','ש'].map(d => `<div class="text-center text-[10px] font-black text-slate-300">${d}</div>`).join('');
-            
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
             const firstDay = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), 1).getDay();
-            const daysInMonth = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth()+1, 0).getDate();
+            const daysInMonth = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0).getDate();
             const logs = getCurrentMonthData().logs;
 
-            for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
-            for(let d=1; d<=daysInMonth; d++) {
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
                 const dStr = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const dayLogs = logs.filter(l => l.date === dStr);
-                const isToday = d === new Date().getDate() && currentViewDate.getMonth() === new Date().getMonth();
+                const hasWork = dayLogs.some(l => !l.planned && l.type !== 'חופשה/חג');
+                const hasHoliday = dayLogs.some(l => l.type === 'חופשה/חג');
                 
-                let bg = 'bg-slate-50 text-slate-400';
-                if(dayLogs.some(l=>l.type==='חופשה/חג')) bg='bg-orange-100 text-orange-600 border-orange-200';
-                else if(dayLogs.some(l=>!l.planned)) bg='bg-emerald-100 text-emerald-700 font-bold border-emerald-200';
-                else if(dayLogs.some(l=>l.planned)) bg='bg-yellow-100 text-yellow-700 border-yellow-200';
+                let bg = 'bg-slate-50 text-slate-300';
+                if (hasHoliday) bg = 'bg-orange-100 text-orange-600 border-orange-200';
+                else if (hasWork) bg = 'bg-emerald-100 text-emerald-700 font-bold border-emerald-200';
 
-                grid.innerHTML += `<div class="calendar-day ${bg} ${isToday ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}">${d}
-                                   <div class="text-[7px] opacity-80">${dayLogs.length ? toHHMM(dayLogs.reduce((s,l)=>s+l.mins,0)) : ''}</div></div>`;
+                grid.innerHTML += `<div class="calendar-day ${bg}">${d}</div>`;
             }
         }
 
-        function saveTarget() {
-            const data = getCurrentMonthData();
-            data.targetMins = (parseInt(document.getElementById('targetH').value)||0)*60 + (parseInt(document.getElementById('targetM').value)||0);
-            data.bonusMins = (parseInt(document.getElementById('bonusH').value)||0)*60;
+        function toggleCheckIn() {
+            if (!db.checkIn) {
+                db.checkIn = Date.now();
+            } else {
+                const mins = Math.round((Date.now() - db.checkIn) / 60000);
+                getCurrentMonthData().logs.push({ 
+                    date: new Date().toISOString().split('T')[0], 
+                    type: 'עבודה', 
+                    mins, 
+                    planned: false 
+                });
+                db.checkIn = null;
+            }
+            updateCheckInUI();
             renderAll();
         }
 
+        function updateCheckInUI() {
+            const btn = document.getElementById('checkBtn');
+            const text = document.getElementById('checkText');
+            if (db.checkIn) {
+                btn.classList.add('bg-red-50', 'border-red-200');
+                text.innerText = "סיום עבודה";
+                document.getElementById('checkIcon').innerText = "⏹️";
+            } else {
+                btn.classList.remove('bg-red-50', 'border-red-200');
+                text.innerText = "כניסה";
+                document.getElementById('checkIcon').innerText = "📍";
+            }
+        }
+
+        function changeMonth(dir) { currentViewDate.setMonth(currentViewDate.getMonth() + dir); renderAll(); }
+        function deleteLog(i) { if(confirm("למחוק?")) { getCurrentMonthData().logs.splice(i, 1); renderAll(); } }
+        function openManualModal() { document.getElementById('manualModal').classList.remove('hidden'); document.getElementById('entryDate').valueAsDate = new Date(); }
+        function closeManualModal() { document.getElementById('manualModal').classList.add('hidden'); }
         function saveManualEntry() {
             const data = getCurrentMonthData();
-            const mins = (parseInt(document.getElementById('entryH').value)||0)*60 + (parseInt(document.getElementById('entryM').value)||0);
-            if(document.getElementById('entryDate').value && mins > 0) {
+            const mins = (parseInt(document.getElementById('entryH').value) || 0) * 60 + (parseInt(document.getElementById('entryM').value) || 0);
+            if (mins > 0) {
                 data.logs.push({
                     date: document.getElementById('entryDate').value,
                     type: document.getElementById('entryType').value,
@@ -260,45 +330,7 @@
             }
         }
 
-        function toggleCheckIn() {
-            if(!db.checkIn) {
-                db.checkIn = Date.now();
-            } else {
-                const mins = Math.round((Date.now() - db.checkIn)/60000);
-                getCurrentMonthData().logs.push({ date: new Date().toISOString().split('T')[0], type:'עבודה', mins, planned:false });
-                db.checkIn = null;
-            }
-            updateCheckInUI();
-            renderAll();
-        }
-
-        function updateCheckInUI() {
-            const btn = document.getElementById('checkBtn');
-            const text = document.getElementById('checkText');
-            if(db.checkIn) {
-                btn.classList.add('bg-red-50', 'border-red-200', 'scale-105');
-                text.innerText = "ביצוע יציאה";
-                document.getElementById('checkIcon').innerText = "⏹️";
-            } else {
-                btn.classList.remove('bg-red-50', 'border-red-200', 'scale-105');
-                text.innerText = "כניסה";
-                document.getElementById('checkIcon').innerText = "📍";
-            }
-        }
-
-        function switchTab(t) {
-            document.getElementById('viewDash').classList.toggle('hidden', t!=='dash');
-            document.getElementById('viewCal').classList.toggle('hidden', t!=='cal');
-            document.getElementById('tabDash').classList.toggle('tab-active', t==='dash');
-            document.getElementById('tabCal').classList.toggle('tab-active', t==='cal');
-            if(t==='cal') renderCalendar();
-        }
-
-        function changeMonth(dir) { currentViewDate.setMonth(currentViewDate.getMonth() + dir); renderAll(); if(!document.getElementById('viewCal').classList.contains('hidden')) renderCalendar(); }
-        function deleteLog(i) { if(confirm("למחוק את הדיווח הזה?")) { getCurrentMonthData().logs.splice(i, 1); renderAll(); if(!document.getElementById('viewCal').classList.contains('hidden')) renderCalendar(); } }
-        function openManualModal() { document.getElementById('manualModal').classList.remove('hidden'); document.getElementById('entryDate').valueAsDate = new Date(); }
-        function closeManualModal() { document.getElementById('manualModal').classList.add('hidden'); }
-
+        // אתחול ראשוני
         updateCheckInUI();
         renderAll();
     </script>
