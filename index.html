@@ -3,178 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>אספ'ה - נוכחות בקלות</title>
+    <title>קודי - ניהול זמן עבודה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .progress-pipe { height: 30px; border-radius: 15px; background: #e2e8f0; position: relative; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #48bb78, #38a169); transition: width 0.5s ease; }
-        .marker { position: absolute; top: 0; bottom: 0; width: 3px; background: #f56565; z-index: 10; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
-        .neon-glow { box-shadow: 0 0 15px rgba(72, 187, 120, 0.5); }
+        .progress-pipe { height: 35px; border-radius: 18px; background: #e2e8f0; position: relative; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e); transition: width 0.5s ease; }
+        .marker { position: absolute; top: 0; bottom: 0; width: 4px; background: #ef4444; z-index: 10; border-radius: 2px; }
+        .log-item { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans min-h-screen pb-20">
+<body class="bg-slate-50 font-sans min-h-screen pb-10">
 
     <!-- Header -->
-    <header class="bg-blue-600 text-white p-6 shadow-lg rounded-b-3xl">
+    <header class="bg-indigo-600 text-white p-6 shadow-lg rounded-b-[2.5rem]">
         <h1 class="text-2xl font-bold">היי מתן 👋</h1>
-        <p class="opacity-90" id="currentMonthText">מעקב שעות לחודש אפריל</p>
+        <p class="opacity-90 text-lg" id="currentMonthDisplay">טוען חודש...</p>
     </header>
 
-    <main class="p-4 space-y-6">
+    <main class="p-4 space-y-5 -mt-5">
         
         <!-- Dashboard Card -->
-        <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
-            <div class="flex justify-between items-end mb-4">
+        <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
+            <div class="flex justify-between items-start mb-6">
                 <div>
-                    <span class="text-sm text-slate-500 block">נותרו עוד</span>
-                    <span class="text-3xl font-black text-blue-600" id="hoursRemainingDisplay">0</span>
-                    <span class="text-lg text-blue-400">שעות</span>
+                    <span class="text-sm text-slate-500 block">נותרו לביצוע החודש</span>
+                    <span class="text-4xl font-black text-indigo-600" id="hoursRemaining">0</span>
+                    <span class="text-lg text-indigo-400">שעות</span>
                 </div>
                 <div class="text-left">
-                    <span class="text-sm text-slate-500 block text-right">יעד חודשי</span>
-                    <span class="font-bold text-slate-700" id="targetDisplay">53.5</span>
+                    <span class="text-xs text-slate-500 block text-left">יעד חודשי (ניתן לשינוי)</span>
+                    <input type="number" id="targetInput" step="0.25" onchange="updateTarget()" 
+                           class="w-20 text-left font-bold text-slate-700 bg-slate-100 rounded px-1 outline-none focus:ring-2 ring-indigo-300">
                 </div>
             </div>
 
-            <!-- Progress Pipe -->
             <div class="progress-pipe shadow-inner mb-2">
-                <div id="marker" class="marker" style="right: 50%;"></div>
-                <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+                <div id="marker" class="marker"></div>
+                <div id="progressFill" class="progress-fill"></div>
             </div>
-            <div class="flex justify-between text-xs text-slate-400 font-medium">
-                <span>0%</span>
-                <span>היום (קצב מומלץ)</span>
-                <span>100%</span>
+            <div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <span>תחילת חודש</span>
+                <span class="text-red-500">קצב מומלץ (היום)</span>
+                <span>יעד 100%</span>
             </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Quick Actions -->
         <div class="grid grid-cols-2 gap-4">
-            <button onclick="toggleCheckIn()" id="checkBtn" class="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-100 active:scale-95 transition-all">
-                <div id="checkIcon" class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2 text-2xl">📍</div>
+            <button onclick="toggleCheckIn()" id="checkBtn" class="bg-white p-5 rounded-3xl shadow-sm border-2 border-indigo-50 flex flex-col items-center transition-all active:scale-95">
+                <div id="checkIcon" class="text-3xl mb-1">📍</div>
                 <span id="checkText" class="font-bold text-slate-700">כניסה</span>
             </button>
-            <button onclick="addManualHours()" class="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-sm border-2 border-green-100 active:scale-95 transition-all">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-2 text-2xl">➕</div>
-                <span class="font-bold text-slate-700">הוספת שעות</span>
+            <button onclick="openManualModal()" class="bg-white p-5 rounded-3xl shadow-sm border-2 border-emerald-50 flex flex-col items-center transition-all active:scale-95">
+                <div class="text-3xl mb-1">📝</div>
+                <span class="font-bold text-slate-700">דיווח ידני</span>
             </button>
         </div>
 
-        <!-- Prediction Box -->
-        <div id="predictionBox" class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
-            טוען נתונים...
+        <!-- Smart Info Box -->
+        <div id="predictionBox" class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-indigo-800 text-sm leading-relaxed shadow-sm">
+            מחשב נתונים...
         </div>
 
-        <!-- Quick Settings -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">⚙️ הגדרות מהירות</h3>
-            <div class="space-y-3">
-                <button onclick="addHoliday()" class="w-full text-right p-2 text-sm bg-orange-50 text-orange-700 rounded-lg border border-orange-100">🏖️ יום חג/חופשה כפויה (מוריד 5.5 ש' מהיעד)</button>
-                <button onclick="resetData()" class="w-full text-right p-2 text-sm bg-red-50 text-red-600 rounded-lg border border-red-100">⚠️ איפוס נתוני חודש</button>
+        <!-- Activity Log -->
+        <div class="bg-white p-5 rounded-3xl shadow-md border border-slate-100">
+            <h3 class="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                <span>יומן פעילות</span>
+                <span class="text-xs font-normal text-slate-400">ניתן למחוק שורות לתיקון</span>
+            </h3>
+            <div id="logList" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                <!-- Logs will appear here -->
             </div>
         </div>
+
+        <button onclick="resetMonth()" class="w-full py-3 text-xs text-slate-400 hover:text-red-500 transition-colors">איפוס נתוני חודש</button>
 
     </main>
 
+    <!-- Manual Entry Modal -->
+    <div id="manualModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl">
+            <h2 class="text-xl font-bold mb-4 text-slate-800">הוספת פעילות</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">תאריך</label>
+                    <input type="date" id="entryDate" class="w-full bg-slate-100 border-none rounded-xl p-3">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">סוג פעילות</label>
+                    <select id="entryType" class="w-full bg-slate-100 border-none rounded-xl p-3">
+                        <option value="עבודה">🏢 עבודה רגילה</option>
+                        <option value="הדרכה">📚 הדרכה / ישיבה</option>
+                        <option value="חופשה/חג">🏖️ חופשה / חג (קיזוז מהיעד)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 text-right">שעות (בחופשה: כמה שעות קוזזו)</label>
+                    <input type="number" id="entryHours" step="0.5" placeholder="כמה שעות?" class="w-full bg-slate-100 border-none rounded-xl p-3">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeManualModal()" class="flex-1 py-3 font-bold text-slate-500">ביטול</button>
+                    <button onclick="saveManualEntry()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200">שמירה</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // State Management
-        let data = JSON.parse(localStorage.getItem('work_tracker_data')) || {
-            actualHours: 0,
-            targetHours: 53.5,
+        // --- Logic & State ---
+        let state = JSON.parse(localStorage.getItem('matan_tracker_v2')) || {
+            targetHours: 42.25,
+            logs: [],
             isCheckedIn: false,
-            checkInTime: null,
-            logs: []
+            checkInTime: null
         };
 
-        function saveData() {
-            localStorage.setItem('work_tracker_data', JSON.stringify(data));
+        const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+        
+        function init() {
+            const now = new Date();
+            document.getElementById('currentMonthDisplay').innerText = `מעקב שעות לחודש ${monthNames[now.getMonth()]}`;
+            document.getElementById('targetInput').value = state.targetHours;
+            document.getElementById('entryDate').valueAsDate = now;
             updateUI();
         }
 
         function updateUI() {
-            const progress = (data.actualHours / data.targetHours) * 100;
-            document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
-            document.getElementById('hoursRemainingDisplay').innerText = Math.max(data.targetHours - data.actualHours, 0).toFixed(1);
-            document.getElementById('targetDisplay').innerText = data.targetHours.toFixed(1);
-            
-            // Check-in status
-            if (data.isCheckedIn) {
-                document.getElementById('checkText').innerText = "יציאה";
-                document.getElementById('checkIcon').innerText = "🛑";
-                document.getElementById('checkBtn').classList.add('border-red-200', 'bg-red-50');
-            } else {
-                document.getElementById('checkText').innerText = "כניסה";
-                document.getElementById('checkIcon').innerText = "📍";
-                document.getElementById('checkBtn').classList.remove('border-red-200', 'bg-red-50');
-            }
-
-            // Marker Calculation (Linear Pace)
             const now = new Date();
+            const totalWorked = state.logs
+                .filter(l => l.type !== 'חופשה/חג')
+                .reduce((sum, l) => sum + parseFloat(l.hours), 0);
+            
+            const totalHolidays = state.logs
+                .filter(l => l.type === 'חופשה/חג')
+                .reduce((sum, l) => sum + parseFloat(l.hours), 0);
+
+            const effectiveTarget = state.targetHours - totalHolidays;
+            const remaining = Math.max(effectiveTarget - totalWorked, 0);
+            const progress = (totalWorked / effectiveTarget) * 100 || 0;
+
+            // Update stats
+            document.getElementById('hoursRemaining').innerText = remaining.toFixed(2);
+            document.getElementById('progressFill').style.width = `${Math.min(progress, 100)}%`;
+
+            // Update marker
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const currentDay = now.getDate();
-            const monthProgress = (currentDay / daysInMonth) * 100;
-            document.getElementById('marker').style.right = (100 - monthProgress) + '%';
+            const dayPercent = (now.getDate() / daysInMonth) * 100;
+            document.getElementById('marker').style.right = `${100 - dayPercent}%`;
 
-            // Prediction Logic
-            const remainingHours = data.targetHours - data.actualHours;
-            const remainingWorkDays = calculateRemainingWorkDays(); // Default Sundays and Wednesdays
-            const perDay = remainingWorkDays > 0 ? (remainingHours / remainingWorkDays).toFixed(1) : 0;
-            
-            document.getElementById('predictionBox').innerText = `נותרו עוד כ-${remainingWorkDays} ימי עבודה (א' ו-ד') החודש. כדי לעמוד ביעד, עליך לעבוד בממוצע ${perDay} שעות בכל אחד מהם.`;
-        }
+            // Render Logs
+            const logList = document.getElementById('logList');
+            logList.innerHTML = state.logs.length === 0 ? '<p class="text-center text-slate-400 text-sm py-4">אין פעילות רשומה</p>' : '';
+            [...state.logs].reverse().forEach((log, index) => {
+                const realIndex = state.logs.length - 1 - index;
+                const div = document.createElement('div');
+                div.className = 'log-item flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-700 text-sm">${log.type} - ${log.date.split('-').reverse().slice(0,2).join('/')}</div>
+                        <div class="text-xs text-slate-500">${log.hours} שעות</div>
+                    </div>
+                    <button onclick="deleteLog(${realIndex})" class="text-slate-300 hover:text-red-500 p-2 text-xl">✕</button>
+                `;
+                logList.appendChild(div);
+            });
 
-        function toggleCheckIn() {
-            const now = new Date();
-            if (!data.isCheckedIn) {
-                data.isCheckedIn = true;
-                data.checkInTime = now.getTime();
+            // Check-in Button UI
+            const checkBtn = document.getElementById('checkBtn');
+            if (state.isCheckedIn) {
+                document.getElementById('checkText').innerText = "ביצוע יציאה";
+                document.getElementById('checkIcon').innerText = "🛑";
+                checkBtn.classList.add('bg-red-50', 'border-red-100');
             } else {
-                const diffMs = now.getTime() - data.checkInTime;
-                const diffHrs = diffMs / (1000 * 60 * 60);
-                data.actualHours += diffHrs;
-                data.isCheckedIn = false;
-                data.checkInTime = null;
-                alert(`נרשמו ${diffHrs.toFixed(2)} שעות עבודה.`);
+                document.getElementById('checkText').innerText = "ביצוע כניסה";
+                document.getElementById('checkIcon').innerText = "📍";
+                checkBtn.classList.remove('bg-red-50', 'border-red-100');
             }
-            saveData();
+
+            // Smart Prediction
+            calculatePrediction(remaining);
+            
+            localStorage.setItem('matan_tracker_v2', JSON.stringify(state));
         }
 
-        function addManualHours() {
-            const hours = prompt("כמה שעות להוסיף?");
-            if (hours && !isNaN(hours)) {
-                data.actualHours += parseFloat(hours);
-                saveData();
-            }
-        }
-
-        function addHoliday() {
-            data.targetHours -= 5.5; // Average day shift
-            saveData();
-            alert("היעד החודשי עודכן.");
-        }
-
-        function calculateRemainingWorkDays() {
+        function calculatePrediction(remaining) {
             const now = new Date();
             const year = now.getFullYear();
             const month = now.getMonth();
             const lastDay = new Date(year, month + 1, 0).getDate();
-            let count = 0;
-            for (let i = now.getDate() + 1; i <= lastDay; i++) {
-                const day = new Date(year, month, i).getDay();
-                if (day === 0 || day === 3) count++; // 0 = Sunday, 3 = Wednesday
+            let workDaysLeft = 0;
+
+            for (let d = now.getDate() + 1; d <= lastDay; d++) {
+                const dayOfWeek = new Date(year, month, d).getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 3) workDaysLeft++; // Sunday=0, Wednesday=3
             }
-            return count || 1; // Avoid division by zero
+
+            const perDay = workDaysLeft > 0 ? (remaining / workDaysLeft).toFixed(2) : 0;
+            document.getElementById('predictionBox').innerHTML = `
+                נותרו עוד <strong>${workDaysLeft}</strong> ימי עבודה קבועים (א', ד').<br>
+                כדי להגיע ליעד, עליך לעבוד ממוצע של <strong>${perDay}</strong> שעות בכל יום כזה.
+            `;
         }
 
-        function resetData() {
-            if (confirm("בטוח שברצונך לאפס את כל הנתונים החודשיים?")) {
-                data = { actualHours: 0, targetHours: 53.5, isCheckedIn: false, checkInTime: null, logs: [] };
-                saveData();
+        // --- Actions ---
+
+        function updateTarget() {
+            state.targetHours = parseFloat(document.getElementById('targetInput').value);
+            updateUI();
+        }
+
+        function toggleCheckIn() {
+            const now = new Date();
+            if (!state.isCheckedIn) {
+                state.isCheckedIn = true;
+                state.checkInTime = now.getTime();
+            } else {
+                const diffMs = now.getTime() - state.checkInTime;
+                const hours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+                state.logs.push({
+                    date: now.toISOString().split('T')[0],
+                    type: 'עבודה',
+                    hours: hours
+                });
+                state.isCheckedIn = false;
+                state.checkInTime = null;
+            }
+            updateUI();
+        }
+
+        function openManualModal() { document.getElementById('manualModal').classList.remove('hidden'); }
+        function closeManualModal() { document.getElementById('manualModal').classList.add('hidden'); }
+
+        function saveManualEntry() {
+            const date = document.getElementById('entryDate').value;
+            const type = document.getElementById('entryType').value;
+            const hours = document.getElementById('entryHours').value;
+
+            if (date && hours) {
+                state.logs.push({ date, type, hours: parseFloat(hours) });
+                closeManualModal();
+                updateUI();
             }
         }
 
-        // Initialize
-        updateUI();
+        function deleteLog(index) {
+            if (confirm("למחוק את השורה הזו?")) {
+                state.logs.splice(index, 1);
+                updateUI();
+            }
+        }
+
+        function resetMonth() {
+            if (confirm("זה ימחק את כל הדיווחים של החודש. להמשיך?")) {
+                state.logs = [];
+                state.isCheckedIn = false;
+                updateUI();
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>
